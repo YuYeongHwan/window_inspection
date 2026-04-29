@@ -1,6 +1,7 @@
 import os
 import shutil
 from pathlib import Path
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -28,7 +29,7 @@ def _run_pipeline(inspection_id: int):
 
 
 @router.get("/", response_model=list[InspectionResponse])
-def list_inspections(building_id: int | None = None, db: Session = Depends(get_db)):
+def list_inspections(building_id: Optional[int] = None, db: Session = Depends(get_db)):
     q = db.query(Inspection)
     if building_id:
         q = q.filter(Inspection.building_id == building_id)

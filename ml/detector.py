@@ -85,3 +85,80 @@ class WindowDetector:
                         )
 
         return windows
+
+
+if __name__ == "__main__":
+    import sys
+    import os
+
+    VIDEO_PATH  = "test_video.MOV"
+    SAMPLE_RATE = 30        # 매 N 프레임마다 1장 처리
+    OUTPUT_DIR  = "results/detector_test"
+    CONF_THRESH = 0.3
+
+    if not os.path.exists(VIDEO_PATH):
+        print(f"[오류] 파일을 찾을 수 없습니다: {VIDEO_PATH}")
+        sys.exit(1)
+
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    detector = WindowDetector(
+        model_path="ml/weights/yolov8n.pt",
+        confidence_threshold=CONF_THRESH,
+    )
+    mode = "YOLO" if detector.model is not None else "OpenCV fallback"
+    print(f"[탐지 모드] {mode}")
+
+    cap = cv2.VideoCapture(VIDEO_PATH)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    fps          = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    print(f"[영상 정보] 총 {total_frames}프레임 / {fps:.1f}fps")
+
+    frame_idx      = 0
+    sampled_count  = 0
+    total_detected = 0
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        if frame_idx % SAMPLE_RATE == 0:
+            windows = detector.detect(frame)
+            total_detected += len(windows)
+
+            # 바운딩박스 + 신뢰도 오버레이
+            vis = frame.copy()
+            for i, win in enumerate(windows):
+                x, y, w, h = win.bbox
+                cv2.rectangle(vis, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                label = f"#{i+1} {win.confidence:.2f}"
+                cv2.putText(vis, label, (x, y - 6),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+
+                # 창문 크롭 저장
+                crop_path = os.path.join(
+                    OUTPUT_DIR, f"f{frame_idx:05d}_w{i+1}.jpg"
+                )
+                cv2.imwrite(crop_path, win.crop)
+
+            # 오버레이 프레임 저장
+            info = f"frame={frame_idx}  windows={len(windows)}  mode={mode}"
+            cv2.putText(vis, info, (10, 28),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.65, (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.putText(vis, info, (10, 28),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 0, 0), 1, cv2.LINE_AA)
+
+            out_path = os.path.join(OUTPUT_DIR, f"frame_{frame_idx:05d}.jpg")
+            cv2.imwrite(out_path, vis)
+
+            elapsed = frame_idx / fps
+            print(f"  [{elapsed:6.1f}s | 프레임 {frame_idx:5d}] 창문 {len(windows)}개")
+            sampled_count += 1
+
+        frame_idx += 1
+
+    cap.release()
+
+    print(f"\n[결과] 처리 프레임: {sampled_count} / 탐지된 창문(누적): {total_detected}")
+    print(f"[저장] {OUTPUT_DIR}/")

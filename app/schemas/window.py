@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel
 from app.models.window import ContaminationGrade
 
@@ -13,7 +14,7 @@ class WindowResultResponse(BaseModel):
     contamination_score: float
     grade: ContaminationGrade
     confidence: float
-    crop_image_path: str | None
+    crop_image_path: Optional[str]
 
     model_config = {"from_attributes": True}
 

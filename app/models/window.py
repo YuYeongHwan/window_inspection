@@ -1,4 +1,6 @@
-from sqlalchemy import Integer, Float, String, ForeignKey, Enum as SAEnum
+from datetime import datetime
+from typing import Optional
+from sqlalchemy import Integer, Float, String, DateTime, ForeignKey, Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 import enum
@@ -9,6 +11,23 @@ class ContaminationGrade(str, enum.Enum):
     B = "B"  # 경미 (25~50%)
     C = "C"  # 보통 (50~75%)
     D = "D"  # 심각 (75~100%)
+
+
+class Window(Base):
+    __tablename__ = "windows"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    building_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("buildings.id"), nullable=False
+    )
+    floor: Mapped[Optional[int]] = mapped_column(Integer)
+    position_x: Mapped[Optional[float]] = mapped_column(Float)
+    position_y: Mapped[Optional[float]] = mapped_column(Float)
+    width: Mapped[Optional[float]] = mapped_column(Float)
+    height: Mapped[Optional[float]] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    building: Mapped["Building"] = relationship("Building", back_populates="windows")  # noqa: F821
 
 
 class WindowResult(Base):
@@ -28,6 +47,6 @@ class WindowResult(Base):
     contamination_score: Mapped[float] = mapped_column(Float)  # 0.0 ~ 1.0
     grade: Mapped[ContaminationGrade] = mapped_column(SAEnum(ContaminationGrade))
     confidence: Mapped[float] = mapped_column(Float)  # 탐지 신뢰도
-    crop_image_path: Mapped[str | None] = mapped_column(String(500))
+    crop_image_path: Mapped[Optional[str]] = mapped_column(String(500))
 
     inspection: Mapped["Inspection"] = relationship("Inspection", back_populates="windows")  # noqa: F821

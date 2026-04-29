@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy import func
@@ -11,8 +12,8 @@ router = APIRouter(prefix="/api/windows", tags=["windows"])
 
 @router.get("/", response_model=list[WindowResultResponse])
 def list_windows(
-    inspection_id: int | None = None,
-    grade: ContaminationGrade | None = None,
+    inspection_id: Optional[int] = None,
+    grade: Optional[ContaminationGrade] = None,
     limit: int = 100,
     db: Session = Depends(get_db),
 ):
