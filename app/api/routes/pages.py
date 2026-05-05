@@ -6,6 +6,7 @@ router = APIRouter(tags=["pages"])
 templates = Jinja2Templates(directory="templates")
 
 
+
 @router.get("/", response_class=HTMLResponse)
 def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
@@ -24,3 +25,16 @@ def inspect_page(request: Request):
 @router.get("/result/{inspection_id}", response_class=HTMLResponse)
 def result_page(request: Request, inspection_id: int):
     return templates.TemplateResponse("result.html", {"request": request})
+
+
+@router.get("/dashboard", response_class=HTMLResponse)
+def dashboard_page(request: Request):
+    return templates.TemplateResponse("dashboard.html", {"request": request})
+
+
+@router.get("/dashboard/{inspection_id}", response_class=HTMLResponse)
+def dashboard_detail_page(request: Request, inspection_id: int):
+    return templates.TemplateResponse(
+        "dashboard_detail.html",
+        {"request": request, "inspection_id": inspection_id},
+    )
